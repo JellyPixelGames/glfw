@@ -306,7 +306,7 @@ static void updateWindowStyles(const _GLFWwindow* window)
                  SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
-// Update default framebuffer transparency
+// Update window framebuffer transparency
 //
 static void updateFramebufferTransparency(const _GLFWwindow* window)
 {
@@ -1166,11 +1166,10 @@ void _glfwUnregisterWindowClassWin32(void)
 //
 GLFWbool _glfwIsCompositionEnabledWin32(void)
 {
-    if (_glfw.win32.dwmapi.instance)
+    if (IsWindowsVistaOrGreater())
     {
         BOOL enabled;
-
-        if (DwmIsCompositionEnabled(&enabled) == S_OK)
+        if (SUCCEEDED(DwmIsCompositionEnabled(&enabled)))
             return enabled;
     }
 
