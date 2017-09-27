@@ -967,7 +967,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
         case WM_DWMCOMPOSITIONCHANGED:
         {
-            if (window->transparent)
+            if (window->win32.transparent)
                 updateFramebufferTransparency(window);
             return 0;
         }
@@ -1109,7 +1109,10 @@ static int createNativeWindow(_GLFWwindow* window,
     DragAcceptFiles(window->win32.handle, TRUE);
 
     if (fbconfig->transparent)
+    {
         updateFramebufferTransparency(window);
+        window->win32.transparent = GLFW_TRUE;
+    }
 
     return GLFW_TRUE;
 }
@@ -1553,6 +1556,11 @@ int _glfwPlatformWindowVisible(_GLFWwindow* window)
 int _glfwPlatformWindowMaximized(_GLFWwindow* window)
 {
     return IsZoomed(window->win32.handle);
+}
+
+int _glfwPlatformFramebufferTransparent(_GLFWwindow* window)
+{
+    return window->win32.transparent && _glfwIsCompositionEnabledWin32();
 }
 
 void _glfwPlatformSetWindowResizable(_GLFWwindow* window, GLFWbool enabled)

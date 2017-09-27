@@ -92,18 +92,11 @@ static GLFWbool chooseGLXFBConfig(const _GLFWfbconfig* desired,
 
         if (desired->transparent)
         {
-            if (_glfw.x11.xrender.available)
+            XVisualInfo* vi = glXGetVisualFromFBConfig(_glfw.x11.display, n);
+            if (vi)
             {
-                XVisualInfo* vi = glXGetVisualFromFBConfig(_glfw.x11.display, n);
-                if (vi)
-                {
-                    XRenderPictFormat* pf =
-                        XRenderFindVisualFormat(_glfw.x11.display, vi->visual);
-                    if (pf && pf->direct.alphaMask)
-                        u->transparent = GLFW_TRUE;
-
-                    XFree(vi);
-                }
+                u->transparent = _glfwIsVisualTransparentX11(vi->visual);
+                XFree(vi);
             }
         }
 

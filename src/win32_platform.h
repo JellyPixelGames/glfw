@@ -267,6 +267,8 @@ typedef struct _GLFWwindowWin32
     GLFWbool            frameAction;
     GLFWbool            iconified;
     GLFWbool            maximized;
+    // Whether to enable framebuffer transparency on DWM
+    GLFWbool            transparent;
 
     // The last received cursor position, regardless of source
     int                 lastCursorPosX, lastCursorPosY;

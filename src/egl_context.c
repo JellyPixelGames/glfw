@@ -130,22 +130,14 @@ static GLFWbool chooseEGLConfig(const _GLFWctxconfig* ctxconfig,
 
         if (desired->transparent)
         {
-            if (_glfw.x11.xrender.available)
+            int count;
+            XVisualInfo* vis = XGetVisualInfo(_glfw.x11.display,
+                                              VisualIDMask, &vi,
+                                              &count);
+            if (vis)
             {
-                int count;
-                XVisualInfo* vis = XGetVisualInfo(_glfw.x11.display,
-                                                  VisualIDMask, &vi,
-                                                  &count);
-                if (vis)
-                {
-                    XRenderPictFormat* pf =
-                        XRenderFindVisualFormat(_glfw.x11.display,
-                                                vis[0].visual);
-                    if (pf && pf->direct.alphaMask)
-                        u->transparent = GLFW_TRUE;
-
-                    XFree(vis);
-                }
+                u->transparent = _glfwIsVisualTransparentX11(vis[0].visual);
+                XFree(vis);
             }
         }
 #endif // _GLFW_X11

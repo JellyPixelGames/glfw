@@ -186,6 +186,9 @@ typedef struct _GLFWwindowX11
     GLFWbool        iconified;
     GLFWbool        maximized;
 
+    // Whether the visual supports framebuffer transparency
+    GLFWbool        transparent;
+
     // Cached position and size used to filter out duplicate events
     int             width, height;
     int             xpos, ypos;
@@ -427,6 +430,7 @@ unsigned long _glfwGetWindowPropertyX11(Window window,
                                         Atom property,
                                         Atom type,
                                         unsigned char** value);
+GLFWbool _glfwIsVisualTransparentX11(Visual* visual);
 
 void _glfwGrabErrorHandlerX11(void);
 void _glfwReleaseErrorHandlerX11(void);
