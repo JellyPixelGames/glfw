@@ -342,6 +342,17 @@ if (_GLFW_COCOA)
 endif()
 
 #--------------------------------------------------------------------
+# Force include debug info for all build targets
+#--------------------------------------------------------------------
+if (MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Z7")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Z7")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+endif()
+
+#--------------------------------------------------------------------
 # Export GLFW library dependencies
 #--------------------------------------------------------------------
 foreach(arg ${glfw_PKG_DEPS})
