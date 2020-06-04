@@ -362,6 +362,8 @@ extern "C" {
 /* The unknown key */
 #define GLFW_KEY_UNKNOWN            -1
 
+#define GLFW_KEY_Null                0   /* @note Required by platform_base.h -- MC 2020-06-04 */
+
 /* Printable keys */
 #define GLFW_KEY_SPACE              32
 #define GLFW_KEY_APOSTROPHE         39  /* ' */
