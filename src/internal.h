@@ -215,9 +215,10 @@ typedef void (APIENTRY * PFN_vkVoidFunction)(void);
     }
 
 // Swaps the provided pointers
+// @mc Switched from void * to decltype
 #define _GLFW_SWAP_POINTERS(x, y) \
     {                             \
-        void* t;                  \
+        decltype(x) t;            \
         t = x;                    \
         x = y;                    \
         y = t;                    \
@@ -266,6 +267,7 @@ struct _GLFWwndconfig
     GLFWbool      centerCursor;
     GLFWbool      focusOnShow;
     GLFWbool      scaleToMonitor;
+    v3            background_color_rgb; // @mc new
     struct {
         GLFWbool  retina;
         char      frameName[256];
@@ -353,11 +355,11 @@ struct _GLFWcontext
     _GLFWdestroycontextfun      destroy;
 
     // This is defined in the context API's context.h
-    _GLFW_PLATFORM_CONTEXT_STATE;
+    // @mc removed _GLFW_PLATFORM_CONTEXT_STATE;
     // This is defined in egl_context.h
-    _GLFW_EGL_CONTEXT_STATE;
+    // @mc removed _GLFW_EGL_CONTEXT_STATE;
     // This is defined in osmesa_context.h
-    _GLFW_OSMESA_CONTEXT_STATE;
+    // @mc removed _GLFW_OSMESA_CONTEXT_STATE;
 };
 
 // Window and context structure
@@ -572,13 +574,13 @@ struct _GLFWlibrary
     // This is defined in the window API's platform.h
     _GLFW_PLATFORM_LIBRARY_WINDOW_STATE;
     // This is defined in the context API's context.h
-    _GLFW_PLATFORM_LIBRARY_CONTEXT_STATE;
+    // @mc removed (WGL) _GLFW_PLATFORM_LIBRARY_CONTEXT_STATE;
     // This is defined in the platform's joystick.h
     _GLFW_PLATFORM_LIBRARY_JOYSTICK_STATE;
     // This is defined in egl_context.h
-    _GLFW_EGL_LIBRARY_CONTEXT_STATE;
+    // @mc removed _GLFW_EGL_LIBRARY_CONTEXT_STATE;
     // This is defined in osmesa_context.h
-    _GLFW_OSMESA_LIBRARY_CONTEXT_STATE;
+    // @mc removed _GLFW_OSMESA_LIBRARY_CONTEXT_STATE;
 };
 
 // Global state shared between compilation units of GLFW

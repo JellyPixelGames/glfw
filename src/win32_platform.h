@@ -38,17 +38,14 @@
  #define WIN32_LEAN_AND_MEAN
 #endif
 
-// This is a workaround for the fact that glfw3.h needs to export APIENTRY (for
-// example to allow applications to correctly declare a GL_ARB_debug_output
-// callback) but windows.h assumes no one will define APIENTRY before it does
-#undef APIENTRY
-
 // GLFW on Windows is Unicode only and does not work in MBCS mode
 #ifndef UNICODE
- #define UNICODE
+// #define UNICODE
 #endif
 
 // GLFW requires Windows XP or later
+// @mc disabled this windows loading and moved it into win32.cpp
+#if 0
 #if WINVER < 0x0501
  #undef WINVER
  #define WINVER 0x0501
@@ -69,6 +66,7 @@
 #include <dinput.h>
 #include <xinput.h>
 #include <dbt.h>
+#endif
 
 // HACK: Define macros that some windows.h variants don't
 #ifndef WM_MOUSEHWHEEL
@@ -276,9 +274,9 @@ typedef VkResult (APIENTRY *PFN_vkCreateWin32SurfaceKHR)(VkInstance,const VkWin3
 typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)(VkPhysicalDevice,uint32_t);
 
 #include "win32_joystick.h"
-#include "wgl_context.h"
-#include "egl_context.h"
-#include "osmesa_context.h"
+// @mc removed #include "wgl_context.h"
+// @mc removed #include "egl_context.h"
+// @mc removed #include "osmesa_context.h"
 
 #if !defined(_GLFW_WNDCLASSNAME)
  #define _GLFW_WNDCLASSNAME L"GLFW30"
@@ -326,6 +324,7 @@ typedef struct _GLFWwindowWin32
 typedef struct _GLFWlibraryWin32
 {
     HWND                helperWindowHandle;
+    b32                 registered_window_class; // @mc new.
     HDEVNOTIFY          deviceNotificationHandle;
     DWORD               foregroundLockTimeout;
     int                 acquiredMonitorCount;

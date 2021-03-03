@@ -247,7 +247,7 @@ static void updateCursorImage(_GLFWwindow* window)
         if (window->cursor)
             SetCursor(window->cursor->win32.handle);
         else
-            SetCursor(LoadCursorW(NULL, IDC_ARROW));
+            SetCursor(LoadCursorW(NULL, (WCHAR *)IDC_ARROW));
     }
     else
         SetCursor(NULL);
@@ -581,7 +581,7 @@ static void releaseMonitor(_GLFWwindow* window)
 static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
                                    WPARAM wParam, LPARAM lParam)
 {
-    _GLFWwindow* window = GetPropW(hWnd, L"GLFW");
+    _GLFWwindow* window = (_GLFWwindow *)GetPropW(hWnd, L"GLFW");
     if (!window)
     {
         // This is the message handling for the hidden helper window
@@ -880,7 +880,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
             if (size > (UINT) _glfw.win32.rawInputSize)
             {
                 free(_glfw.win32.rawInput);
-                _glfw.win32.rawInput = calloc(size, 1);
+                _glfw.win32.rawInput = (RAWINPUT *)calloc(size, 1);
                 _glfw.win32.rawInputSize = size;
             }
 
@@ -1078,10 +1078,13 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
             break;
         }
 
+        /* @mc disabled because it was stopping the window from painting the background color using
+         * our custom brush  in _glfwRegisterWindowClassWin32()
         case WM_ERASEBKGND:
         {
             return TRUE;
         }
+        */
 
         case WM_NCACTIVATE:
         case WM_NCPAINT:
@@ -1169,7 +1172,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
             int i;
 
             const int count = DragQueryFileW(drop, 0xffffffff, NULL, 0);
-            char** paths = calloc(count, sizeof(char*));
+            char** paths = (char **)calloc(count, sizeof(char*));
 
             // Move the mouse to the position of the drop
             DragQueryPoint(drop, &pt);
@@ -1178,7 +1181,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
             for (i = 0;  i < count;  i++)
             {
                 const UINT length = DragQueryFileW(drop, i, NULL, 0);
-                WCHAR* buffer = calloc((size_t) length + 1, sizeof(WCHAR));
+                WCHAR* buffer = (WCHAR *)calloc((size_t) length + 1, sizeof(WCHAR));
 
                 DragQueryFileW(drop, i, buffer, length + 1);
                 paths[i] = _glfwCreateUTF8FromWideStringWin32(buffer);
@@ -1326,29 +1329,46 @@ static int createNativeWindow(_GLFWwindow* window,
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
 
+// @mc new
+mc_fn u32
+ToU32(f32 value) {
+    s16 n = (s16)(value * 255);
+    if (n < 0) n = 0;
+    if (n > 255) n = 255;
+    return (u32)n;
+}
+
 // Registers the GLFW window class
 //
-GLFWbool _glfwRegisterWindowClassWin32(void)
+GLFWbool _glfwRegisterWindowClassWin32(v3 bg_rgb)
 {
-    WNDCLASSEXW wc;
+    if (_glfw.win32.registered_window_class)
+        return true;
 
+    u32 r = ToU32(bg_rgb.r);
+    u32 g = ToU32(bg_rgb.g);
+    u32 b = ToU32(bg_rgb.b);
+    HBRUSH brush = CreateSolidBrush((b << 16) | (g << 8) | r);
+
+    WNDCLASSEXW wc;
     ZeroMemory(&wc, sizeof(wc));
     wc.cbSize        = sizeof(wc);
     wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.lpfnWndProc   = (WNDPROC) windowProc;
     wc.hInstance     = GetModuleHandleW(NULL);
-    wc.hCursor       = LoadCursorW(NULL, IDC_ARROW);
+    wc.hCursor       = LoadCursorW(NULL, (wchar_t *)IDC_ARROW);
     wc.lpszClassName = _GLFW_WNDCLASSNAME;
+    wc.hbrBackground = brush;
 
     // Load user-provided icon if available
-    wc.hIcon = LoadImageW(GetModuleHandleW(NULL),
+    wc.hIcon = (HICON)LoadImageW(GetModuleHandleW(NULL),
                           L"GLFW_ICON", IMAGE_ICON,
                           0, 0, LR_DEFAULTSIZE | LR_SHARED);
     if (!wc.hIcon)
     {
         // No user-provided icon found, load default icon
-        wc.hIcon = LoadImageW(NULL,
-                              IDI_APPLICATION, IMAGE_ICON,
+        wc.hIcon = (HICON)LoadImageW(NULL,
+                              (WCHAR *)IDI_APPLICATION, IMAGE_ICON,
                               0, 0, LR_DEFAULTSIZE | LR_SHARED);
     }
 
@@ -1359,6 +1379,8 @@ GLFWbool _glfwRegisterWindowClassWin32(void)
         return GLFW_FALSE;
     }
 
+    _glfw.win32.registered_window_class = true;
+
     return GLFW_TRUE;
 }
 
@@ -1366,7 +1388,9 @@ GLFWbool _glfwRegisterWindowClassWin32(void)
 //
 void _glfwUnregisterWindowClassWin32(void)
 {
-    UnregisterClassW(_GLFW_WNDCLASSNAME, GetModuleHandleW(NULL));
+    if (_glfw.win32.registered_window_class) {
+        UnregisterClassW(_GLFW_WNDCLASSNAME, GetModuleHandleW(NULL));
+    }
 }
 
 
@@ -1379,11 +1403,25 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
                               const _GLFWctxconfig* ctxconfig,
                               const _GLFWfbconfig* fbconfig)
 {
+    // @mc new: relocated the  register call from _glfwPlatformInit() and we're now passing it a color.
+    if (!_glfw.win32.registered_window_class) {
+        b32 registered = _glfwRegisterWindowClassWin32(wndconfig->background_color_rgb);
+        if (!registered) {
+            return GLFW_FALSE;
+        }
+        // @mc this was being done in the platform init as well after registering the window class.
+        // This change means we can't use the helper window until a window is created.
+        if (!createHelperWindow()) {
+            return GLFW_FALSE;
+        }
+    }
+
     if (!createNativeWindow(window, wndconfig, fbconfig))
         return GLFW_FALSE;
 
     if (ctxconfig->client != GLFW_NO_API)
     {
+        /* @mc disabled WGL, EGL and OSMesa - we setup the window drawing when loading a renderer.
         if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
         {
             if (!_glfwInitWGL())
@@ -1405,6 +1443,8 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
             if (!_glfwCreateContextOSMesa(window, ctxconfig, fbconfig))
                 return GLFW_FALSE;
         }
+        */
+        Assert(false);
     }
 
     if (window->monitor)
@@ -1642,7 +1682,7 @@ void _glfwPlatformGetWindowContentScale(_GLFWwindow* window,
 {
     const HANDLE handle = MonitorFromWindow(window->win32.handle,
                                             MONITOR_DEFAULTTONEAREST);
-    _glfwGetMonitorContentScaleWin32(handle, xscale, yscale);
+    _glfwGetMonitorContentScaleWin32((HMONITOR)handle, xscale, yscale);
 }
 
 void _glfwPlatformIconifyWindow(_GLFWwindow* window)
@@ -1931,7 +1971,7 @@ void _glfwPlatformPollEvents(void)
         //       no key up message is generated by the first key release
         //       The other half of this is in the handling of WM_KEYUP
         // HACK: Query actual key state and synthesize release events as needed
-        window = GetPropW(handle, L"GLFW");
+        window = (_GLFWwindow *)GetPropW(handle, L"GLFW");
         if (window)
         {
             const GLFWbool lshift = (GetAsyncKeyState(VK_LSHIFT) & 0x8000) != 0;
@@ -2067,7 +2107,7 @@ int _glfwPlatformCreateStandardCursor(_GLFWcursor* cursor, int shape)
     else
         return GLFW_FALSE;
 
-    cursor->win32.handle = LoadImageW(NULL,
+    cursor->win32.handle = (HCURSOR)LoadImageW(NULL,
                                       MAKEINTRESOURCEW(id), IMAGE_CURSOR, 0, 0,
                                       LR_DEFAULTSIZE | LR_SHARED);
     if (!cursor->win32.handle)
@@ -2110,7 +2150,7 @@ void _glfwPlatformSetClipboardString(const char* string)
         return;
     }
 
-    buffer = GlobalLock(object);
+    buffer = (WCHAR *)GlobalLock(object);
     if (!buffer)
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
@@ -2156,7 +2196,7 @@ const char* _glfwPlatformGetClipboardString(void)
         return NULL;
     }
 
-    buffer = GlobalLock(object);
+    buffer = (WCHAR *)GlobalLock(object);
     if (!buffer)
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,

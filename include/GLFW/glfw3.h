@@ -362,7 +362,7 @@ extern "C" {
 /* The unknown key */
 #define GLFW_KEY_UNKNOWN            -1
 
-#define GLFW_KEY_Null                0   /* @note Required by platform_base.h -- MC 2020-06-04 */
+#define GLFW_KEY_Null                0   // @mc Required by platform_base.h -- 2020-06-04 
 
 /* Printable keys */
 #define GLFW_KEY_SPACE              32
@@ -2655,7 +2655,9 @@ GLFWAPI void glfwWindowHintString(int hint, const char* value);
  *
  *  @ingroup window
  */
-GLFWAPI GLFWwindow* glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share);
+// @mc added background color
+// GLFWAPI GLFWwindow* glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share);
+GLFWAPI GLFWwindow* glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share, v3 background_color_rgb);
 
 /*! @brief Destroys the specified window and its context.
  *

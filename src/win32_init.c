@@ -194,7 +194,7 @@ static void freeLibraries(void)
 //
 static void createKeyTables(void)
 {
-    int scancode;
+    short int scancode;
 
     memset(_glfw.win32.keycodes, -1, sizeof(_glfw.win32.keycodes));
     memset(_glfw.win32.scancodes, -1, sizeof(_glfw.win32.scancodes));
@@ -399,7 +399,7 @@ WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source)
         return NULL;
     }
 
-    target = calloc(count, sizeof(WCHAR));
+    target = (WCHAR *)calloc(count, sizeof(WCHAR));
 
     if (!MultiByteToWideChar(CP_UTF8, 0, source, -1, target, count))
     {
@@ -427,7 +427,7 @@ char* _glfwCreateUTF8FromWideStringWin32(const WCHAR* source)
         return NULL;
     }
 
-    target = calloc(size, 1);
+    target = (char *)calloc(size, 1);
 
     if (!WideCharToMultiByte(CP_UTF8, 0, source, -1, target, size, NULL, NULL))
     {
@@ -573,11 +573,15 @@ int _glfwPlatformInit(void)
     else if (IsWindowsVistaOrGreater())
         SetProcessDPIAware();
 
+    /* @mc Disabled this and moved it to the start of _glfwPlatformCreateWindow() in win32_window.c
+     * That allows us to change the window color using config data that isn't available at this time.
     if (!_glfwRegisterWindowClassWin32())
         return GLFW_FALSE;
 
     if (!createHelperWindow())
         return GLFW_FALSE;
+
+    */
 
     _glfwInitTimerWin32();
     _glfwInitJoysticksWin32();
@@ -604,8 +608,10 @@ void _glfwPlatformTerminate(void)
     free(_glfw.win32.clipboardString);
     free(_glfw.win32.rawInput);
 
-    _glfwTerminateWGL();
-    _glfwTerminateEGL();
+    // @mc disabled WGL
+    // _glfwTerminateWGL();
+    // @mc disabled EGL
+    //_glfwTerminateEGL();
 
     _glfwTerminateJoysticksWin32();
 
